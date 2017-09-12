@@ -1,4 +1,5 @@
 require "io/console"
+require "colorize"
 
 KEYMAP = {
   " " => :space,
@@ -37,6 +38,7 @@ class Cursor
   def initialize(cursor_pos, board)
     @cursor_pos = cursor_pos
     @board = board
+    @selected_pos = nil
   end
 
   def get_input
@@ -76,11 +78,19 @@ class Cursor
   end
 
   def handle_key(key)
-    case KEYMAP[key]
-    when :return || :space
-      cursor_pos
-    when :left || :right || :up || :down
+    case key
+    when :return, :space
+      if @selected_pos.nil?
+        @selected_pos = cursor_pos
+      else
+        @end_pos = cursor_pos
+        board.move_piece(@selected_pos, @end_pos)
+        @selected_pos = nil
+        @end_pos = nil
+      end
+    when :left, :right, :up, :down
       update_pos(MOVES[key])
+      nil
     when :ctrl_c
       Process.exit(0)
     end
@@ -90,6 +100,7 @@ class Cursor
   def update_pos(diff)
     new_pos = [@cursor_pos.first + diff.first, @cursor_pos.last + diff.last]
     @cursor_pos = new_pos if @board.in_bounds(new_pos)
+    # board[cursor_pos]
   end
 
 end

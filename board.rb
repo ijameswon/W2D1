@@ -13,10 +13,11 @@ require "byebug"
 class Board
 
   PIECES = ["Rook", "Knight","Bishop","Queen","King","Pawn"]
-  attr_reader :board
+  attr_accessor :board
 
   def initialize()
     @board = Array.new(8) {Array.new(8)}
+    self.make_starting_grid
 
   end
 
@@ -41,6 +42,23 @@ class Board
     rescue ArgumentError
       puts "There is no piece at #{start_pos}"
     end
+
+    if self[start_pos].color != self[end_pos].color
+      starting = self[start_pos]
+      ending = self[end_pos]
+
+      starting_pos = self[start_pos].pos
+      ending_pos = self[end_pos].pos
+
+      self[end_pos] = starting
+      self[end_pos] = NullPiece.instance
+
+      self[end_pos].pos = starting_pos
+      self[end_pos].pos = nil
+
+
+    end
+
 
     starting = self[start_pos]
     ending = self[end_pos]
@@ -99,43 +117,76 @@ class Board
   def set_white_pieces
 
     8.times do |sq|
-      @board[6][sq] = Piece.new([6,sq],"Pawn","White")
+      @board[6][sq] = Pawn.new([6,sq],:white, @board, "\u2659")
     end
 
-    pieces = ["Rook", "Knight","Bishop","Queen","King","Bishop","Knight","Rook"]
+    pieces = [Rook, Knight,Bishop,Queen,King,Bishop,Knight,Rook]
+    symbols = ["\u2656","\u2658","\u2657","\u2655","\u2654","\u2657","\u2658","\u2656"]
 
     8.times do |sq|
-      @board[7][sq] = Piece.new([7,sq],pieces[sq],"White")
+      @board[7][sq] = pieces[sq].new([7,sq],:white, @board, symbols[sq])
     end
 
   end
 
   def set_black_pieces
     8.times do |sq|
-      @board[1][sq] = Piece.new([1,sq],"Pawn","Black")
+      @board[1][sq] = Pawn.new([1,sq],:black, @board, "\u265F")
     end
 
-    pieces = ["Rook", "Knight","Bishop","Queen","King","Bishop","Knight","Rook"].reverse
+    pieces = [Rook, Knight,Bishop,Queen,King,Bishop,Knight,Rook].reverse
+    symbols = ["\u265C","\u265E","\u265D","\u265B","\u265A","\u265D","\u265E","\u265C"].reverse
 
     8.times do |sq|
-      @board[0][sq] = Piece.new([0,sq],pieces[sq],"Black")
+      @board[0][sq] = pieces[sq].new([0,sq],:black, @board, symbols[sq])
     end
 
 
   end
 
   def set_null_pieces
+    null_piece = NullPiece.instance
     (2..5).each do |row|
       @board[row].each_with_index do |_, idx|
-        @board[row][idx] = NullPiece.new([row, idx], "NullPiece")
+        @board[row][idx] = null_piece
       end
       @board
     end
   end
 
   def in_bounds(pos)
-    (pos.first < 7 && pos.first > 0) && (pos.last < 7 && pos.last > 0)
+    (pos.first <= 7 && pos.first >= 0) && (pos.last <= 7 && pos.last >= 0)
 
   end
+
+  def in_check?(color)
+    player_color = color == :white ? :black : :white
+
+    (0..7).each do |row|
+      (0..7).each do |col|
+        king_pos = self[row][col] if self[row][col].class == King
+      end
+    end
+
+    (0..7).each do |row|
+      (0..7).each do |col|
+        if self[row][col].color == player_color
+          moves_pos = self[row][col].moves
+          return true if moves_pos.include?(king_pos)
+        end
+      end
+    end
+    false
+  end
+
+  def checkmate?(color)
+
+    (0..7).each do |row|
+      (0..7).each do |col|
+        king_pos = self[row][col] if self[row][col].class == King
+      end
+    end
+  end
+
 
 end #end class Board
